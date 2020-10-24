@@ -7,6 +7,7 @@ export const styles = StyleSheet.create({
 
     backgroundColor: themeVars.mainBackground,
   },
+
   contentWrapper: {
     flex: 1,
     margin: 20,
@@ -28,12 +29,25 @@ export const styles = StyleSheet.create({
   },
   content: {
     textAlign: 'center',
-    bottom: 30,
+    fontWeight: 'bold',
     fontSize: 16,
+    marginBottom: 20,
+  },
+  formContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    marginVertical: 20,
+    flexGrow: 1,
+  },
+  input: {},
+  inputtxt: {
+    color: 'grey',
   },
   btn: {
     marginBottom: 20,
-    paddingHorizontal: 40,
+    paddingHorizontal: 56,
     paddingVertical: 10,
   },
 });

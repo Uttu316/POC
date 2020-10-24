@@ -6,3 +6,10 @@ export const setToken = (token) => {
     token: token,
   };
 };
+
+export const getSubscription = (isSubscribed) => {
+  return {
+    type: mainActionTypes.GET_SUBCRIPTION,
+    isSubscribed,
+  };
+};

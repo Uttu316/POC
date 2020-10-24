@@ -4,6 +4,8 @@ import {NavigationContainer} from '@react-navigation/native';
 import {createStackNavigator} from '@react-navigation/stack';
 import {useSelector} from 'react-redux';
 import SplashScreen from './screens/splash-screen';
+import LoginScreen from './screens/login-screen';
+import HomeScreen from './screens/home-screen';
 
 const Stack = createStackNavigator();
 
@@ -16,6 +18,23 @@ const RootNavigator = (props) => {
         <Stack.Screen
           name="splash"
           component={SplashScreen}
+          options={{
+            animationEnabled: false,
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen
+          name="login"
+          component={LoginScreen}
+          options={{
+            animationEnabled: false,
+            headerShown: false,
+          }}
+        />
+
+        <Stack.Screen
+          name="home"
+          component={HomeScreen}
           options={{
             animationEnabled: false,
             headerShown: false,
