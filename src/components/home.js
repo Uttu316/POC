@@ -34,7 +34,7 @@ const Home = () => {
       <Button
         raised
         disabled={isSubscribed}
-        title={!isSubscribed ? 'Buy Subscription' : "You've already Subscribed"}
+        title={!isSubscribed ? 'Buy Subscription' : "You've Subscribed"}
         containerStyle={styles.button}
         buttonStyle={styles.btn}
         onPress={() => onBuySubscription()}

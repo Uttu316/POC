@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useRef, useEffect, useState} from 'react';
 import {
   View,
   Text,
@@ -13,138 +13,105 @@ import {Avatar, Button, Icon, ListItem} from 'react-native-elements';
 import {themeVars} from '../styles/variables';
 import DropDownPicker from 'react-native-dropdown-picker';
 
-const Events = () => {
-  const [types, setTypes] = useState(null);
-  const [items, setItems] = useState([{label: 'A-type', value: 'a'}]);
-  const data = [
-    {
-      id: '123232',
-      image:
-        'https://cdn3.iconfinder.com/data/icons/ballicons-reloaded-free/512/icon-68-128.png',
-      url: '',
-      isDownloaded: true,
-      isDownLoading: false,
-      name: 'Name',
-      description: 'This screen shows the list of all the Events ',
-      time: '05:12 PM',
-      isReserved: false,
-    },
-    {
-      id: '133232',
-      image: '',
-      url: '',
-      isDownloaded: false,
-      isDownLoading: false,
-      name: 'Name',
-      description: 'This screen shows the list of all the Events ',
-      time: '05:12 PM',
-      isReserved: false,
-    },
-    {
-      id: '124232',
-      image: '',
-      url: '',
-      isDownloaded: false,
-      isDownLoading: false,
-      name: 'Name',
-      description: 'This screen shows the list of all the Events ',
-      time: '05:12 PM',
-      isReserved: false,
-    },
-    {
-      id: '1232532',
-      image: '',
-      url: '',
-      isDownloaded: false,
-      isDownLoading: false,
-      name: 'Name',
-      description: 'This screen shows the list of all the Events ',
-      time: '05:12 PM',
-      isReserved: true,
-    },
-    {
-      id: '123632',
-      image: '',
-      url: '',
-      isDownloaded: false,
-      isDownLoading: false,
-      name: 'Name',
-      description: 'This screen shows the list of all the Events ',
-      time: '05:12 PM',
-      isReserved: false,
-    },
-    {
-      id: '12320532',
-      image: '',
-      url: '',
-      isDownloaded: true,
-      isDownLoading: false,
-      name: 'Name',
-      description: 'This screen shows the list of all the Events ',
-      time: '05:12 PM',
-      isReserved: false,
-    },
-    {
-      id: '123932',
-      image: '',
-      url: '',
-      isDownloaded: false,
+import MapView, {Marker} from 'react-native-maps';
+import {PROVIDER_GOOGLE} from 'react-native-maps';
+import {useSelector} from 'react-redux';
 
-      isDownLoading: false,
-      name: 'Name',
-      description: 'This screen shows the list of all the Events ',
-      time: '05:12 PM',
-      isReserved: false,
-    },
+const Events = ({fetchEvents, page, setPage}) => {
+  const _map = useRef(null);
+  const [searchValues, setSeachValues] = useState({
+    name: '',
+    postcode: '',
+  });
+  const [types, setTypes] = useState(null);
+  const [items, setItems] = useState([
+    {label: 'Football', value: 'football'},
     {
-      id: '1232732',
-      image: '',
-      url: '',
-      isDownloaded: false,
-      isDownLoading: false,
-      name: 'Name',
-      description: 'This screen shows the list of all the Events ',
-      time: '05:12 PM',
-      isReserved: false,
+      label: 'Tennis',
+      value: 'tennis',
     },
-    {
-      id: '127632',
-      image: '',
-      url: '',
-      isDownloaded: false,
-      isDownLoading: false,
-      name: 'Name',
-      description: 'This screen shows the list of all the Events ',
-      time: '05:12 PM',
-      isReserved: true,
-    },
-  ];
+  ]);
+  const apiStatus = useSelector((state) => state.main.eventApiStatus);
+  const eventsData = useSelector((state) => state.main.eventsData);
+  const data = eventsData.events;
+  const locations = eventsData.locations;
+  useEffect(() => {
+    if (_map.current) {
+      _map.current.fitToSuppliedMarkers(locations.map(({user_id}) => user_id));
+    }
+  }, []);
+  function onSearch() {
+    console.log(page, searchValues.name, types, searchValues.postcode);
+    fetchEvents(page, searchValues.name, types, searchValues.postcode);
+  }
   return (
     <>
-      <View style={styles.mapViewContainer}>{/* Map View */}</View>
+      <View style={styles.mapViewContainer}>
+        <MapView
+          showsUserLocation={true}
+          style={styles.map}
+          provider={PROVIDER_GOOGLE}
+          ref={_map}>
+          {locations.map((marker) => (
+            <Marker
+              key={marker.user_id}
+              coordinate={{
+                latitude: marker.lat,
+                longitude: marker.lng,
+              }}
+              title={marker.title}
+            />
+          ))}
+        </MapView>
+      </View>
       <View style={styles.formContainer}>
         <View style={styles.formLeftContaner}>
           <TextInput
             placeholder="Name"
+            value={searchValues.name}
+            onChangeText={(text) =>
+              setSeachValues({...searchValues, name: text})
+            }
             style={[styles.input, {marginBottom: 5}]}
           />
-          <TextInput placeholder="Place" style={styles.input} />
+          <TextInput
+            value={searchValues.postcode}
+            onChangeText={(text) =>
+              setSeachValues({...searchValues, postcode: text})
+            }
+            placeholder="Postcode"
+            style={styles.input}
+          />
         </View>
         <View style={styles.formRightContanier}>
           <DropDownPicker
             items={items}
             placeholder="Types"
             defaultValue={types}
+            onChangeItem={(item) => setTypes(item.value)}
           />
-          <Button title="Search" containerStyle={{marginTop: 5}} />
+          <Button
+            title="Search"
+            containerStyle={{marginTop: 5}}
+            onPress={() => onSearch()}
+          />
         </View>
       </View>
-      <FlatList
-        keyExtractor={(item, index) => index.toString()}
-        data={data}
-        ListEmptyComponent={() => <EmptyContainer />}
-        renderItem={(props) => <Item {...props} />}
-      />
+      {apiStatus !== 'loading' && (
+        <FlatList
+          keyExtractor={(item, index) => index.toString()}
+          data={data}
+          ListEmptyComponent={() => <EmptyContainer />}
+          renderItem={(props) => <Item {...props} />}
+        />
+      )}
+      {apiStatus === 'loading' && (
+        <ActivityIndicator
+          color={themeVars.blueIcon}
+          size={32}
+          style={{marginVertical: 20, alignSelf: 'center'}}
+        />
+      )}
     </>
   );
 };
@@ -174,6 +141,7 @@ const Item = ({item, index}) => (
   <ListItem bottomDivider>
     <Avatar
       source={{uri: item.image}}
+      avatarStyle={{borderRadius: 150}}
       icon={{type: 'material', name: 'person', size: 28}}
       placeholderStyle={styles.avatarIcon}
     />
@@ -274,7 +242,9 @@ const styles = StyleSheet.create({
   },
   mapViewContainer: {
     height: 250,
-    backgroundColor: 'lightgrey',
+  },
+  map: {
+    flex: 1,
   },
   formContainer: {
     flexDirection: 'row',

@@ -13,3 +13,23 @@ export const getSubscription = (isSubscribed) => {
     isSubscribed,
   };
 };
+
+export const getEventsData = (eventsData) => {
+  return {
+    type: mainActionTypes.GET_EVENTS_DATA,
+    eventsData,
+  };
+};
+
+export const setEventAPIStatus = (apiStatus) => {
+  return {
+    type: mainActionTypes.SET_EVENT_API_STATUS,
+    apiStatus,
+  };
+};
+
+export const resetValues = () => {
+  return {
+    type: mainActionTypes.RESET_VALUES,
+  };
+};

@@ -1,16 +1,25 @@
 import React, {useState} from 'react';
 import {Alert, View} from 'react-native';
 import {Button, Icon} from 'react-native-elements';
+import {useDispatch} from 'react-redux';
+import {resetValues} from '../redux/actions/main-action';
 import {styles} from '../styles/home-styles';
 import {themeVars} from '../styles/variables';
 
-const BottomTabs = ({currentTab, setTab}) => {
+const BottomTabs = ({currentTab, navigation, setTab}) => {
   const [isLogout, selectLogOut] = useState(false);
+  const dispatch = useDispatch();
 
   function onLogout() {
     selectLogOut(true);
     Alert.alert('Logout', 'Do you really want to logout?', [
-      {text: 'OK', onPress: () => console.log('OK Pressed')},
+      {
+        text: 'OK',
+        onPress: () => {
+          navigation.replace('login');
+          dispatch(resetValues());
+        },
+      },
       {
         text: 'Cancel',
         onPress: () => selectLogOut(false),
