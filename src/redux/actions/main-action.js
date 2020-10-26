@@ -28,6 +28,19 @@ export const setEventAPIStatus = (apiStatus) => {
   };
 };
 
+export const addNotificationData = (data) => {
+  return {
+    type: mainActionTypes.ADD_NOTIFICATION_DATA,
+    data,
+  };
+};
+export const setDownloadsData = (data) => {
+  return {
+    type: mainActionTypes.SET_DOWNLOADS_DATA,
+    data,
+  };
+};
+
 export const resetValues = () => {
   return {
     type: mainActionTypes.RESET_VALUES,

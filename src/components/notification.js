@@ -1,85 +1,26 @@
-import React from 'react';
+import React, {useState} from 'react';
 import {View, Text, StyleSheet, FlatList, TouchableOpacity} from 'react-native';
 import {Avatar, Button, Icon, ListItem} from 'react-native-elements';
+import {useSelector, useDispatch} from 'react-redux';
+import {addNotificationData} from '../redux/actions/main-action';
 import {themeVars} from '../styles/variables';
 
 const Notification = () => {
-  const totalCount = 2;
-  const data = [
-    {
-      id: '123232',
-      image:
-        'https://cdn3.iconfinder.com/data/icons/ballicons-reloaded-free/512/icon-68-128.png',
-      name: 'Name',
-      description: 'This screen shows the list of all the Events ',
-      time: '05:12 min',
-      status: 'upcoming',
-    },
-    {
-      id: '133232',
-      image: '',
-      name: 'Name',
-      description: 'This screen shows the list of all the Events ',
-      time: '05:12 min',
-      status: 'upcoming',
-    },
-    {
-      id: '124232',
-      image: '',
-      name: 'Name',
-      description: 'This screen shows the list of all the Events ',
-      time: '05:12 min',
+  const dispatch = useDispatch();
+  const [isChanging, toggle] = useState(false);
+  let data = useSelector((state) => state.main.notificationData);
+
+  const totalCount = data.length;
+
+  function onAction(item, index) {
+    let newNotificationData = data;
+    newNotificationData[index] = {
+      ...newNotificationData[index],
       status: 'attending',
-    },
-    {
-      id: '1232532',
-      image: '',
-      name: 'Name',
-      description: 'This screen shows the list of all the Events ',
-      time: '05:12 min',
-      status: 'upcoming',
-    },
-    {
-      id: '123632',
-      image: '',
-      name: 'Name',
-      description: 'This screen shows the list of all the Events ',
-      time: '05:12 min',
-      status: 'upcoming',
-    },
-    {
-      id: '12320532',
-      image: '',
-      name: 'Name',
-      description: 'This screen shows the list of all the Events ',
-      time: '05:12 min',
-      status: 'upcoming',
-    },
-    {
-      id: '123932',
-      image: '',
-      name: 'Name',
-      description: 'This screen shows the list of all the Events ',
-      time: '05:12 min',
-      status: 'upcoming',
-    },
-    {
-      id: '1232732',
-      image: '',
-      name: 'Name',
-      description: 'This screen shows the list of all the Events ',
-      time: '05:12 min',
-      status: 'upcoming',
-    },
-    {
-      id: '127632',
-      image: '',
-      name: 'Name',
-      description: 'This screen shows the list of all the Events ',
-      time: '05:12 min',
-      status: 'attended',
-    },
-  ];
+    };
+    toggle(!isChanging);
+    dispatch(addNotificationData(newNotificationData));
+  }
   return (
     <>
       {data && data.length > 0 && (
@@ -91,7 +32,7 @@ const Notification = () => {
         keyExtractor={(item, index) => index.toString()}
         data={data}
         ListEmptyComponent={() => <EmptyContainer />}
-        renderItem={(props) => <Item {...props} />}
+        renderItem={(props) => <Item {...props} onAction={onAction} />}
       />
     </>
   );
@@ -109,7 +50,7 @@ const EmptyContainer = () => {
     </View>
   );
 };
-const Item = ({item, index}) => (
+const Item = ({item, onAction, index}) => (
   <ListItem bottomDivider>
     <Avatar
       source={{uri: item.image}}
@@ -123,6 +64,11 @@ const Item = ({item, index}) => (
     <View style={styles.listRightContainer}>
       <Text style={styles.timeTxt}>starts in {item.time} </Text>
       <TouchableOpacity
+        onPress={() => {
+          if (item.status === 'upcoming') {
+            onAction(item, index);
+          }
+        }}
         style={[
           styles.rightBtn,
           {

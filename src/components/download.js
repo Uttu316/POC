@@ -1,73 +1,85 @@
-import React from 'react';
-import {View, Text, StyleSheet, FlatList, TouchableOpacity} from 'react-native';
+import React, {useEffect, useState} from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  TouchableOpacity,
+  ActivityIndicator,
+} from 'react-native';
 import {Avatar, Button, Icon, ListItem} from 'react-native-elements';
+import {useSelector, useDispatch} from 'react-redux';
+import RNFetchBlob from 'rn-fetch-blob';
+import {setDownloadsData} from '../redux/actions/main-action';
 import {themeVars} from '../styles/variables';
+import {playVideo, requestStoragePermission} from '../utils/utils';
 
 const Downloads = () => {
-  const data = [
-    {
-      id: '123232',
-      path: '',
-      name: 'Name',
-      description: 'This screen shows the list of all the Events ',
-    },
-    {
-      id: '133232',
-      path: '',
-      name: 'Name',
-      description: 'This screen shows the list of all the Events ',
-    },
-    {
-      id: '124232',
-      path: '',
-      name: 'Name',
-      description: 'This screen shows the list of all the Events ',
-    },
-    {
-      id: '1232532',
-      path: '',
-      name: 'Name',
-      description: 'This screen shows the list of all the Events ',
-    },
-    {
-      id: '123632',
-      path: '',
-      name: 'Name',
-      description: 'This screen shows the list of all the Events ',
-    },
-    {
-      id: '12320532',
-      path: '',
-      name: 'Name',
-      description: 'This screen shows the list of all the Events ',
-    },
-    {
-      id: '123932',
-      path: '',
-      name: 'Name',
-      description: 'This screen shows the list of all the Events ',
-    },
-    {
-      id: '1232732',
-      path: '',
-      name: 'Name',
-      description: 'This screen shows the list of all the Events ',
-    },
-    {
-      id: '127632',
-      path: '',
-      name: 'Name',
-      description: 'This screen shows the list of all the Events ',
-    },
-  ];
+  const dispatch = useDispatch();
+  const downloadData = useSelector((state) => state.main.downloadData);
+
+  const [isLoading, setLoading] = useState('');
+
+  useEffect(() => {
+    checkDownloads();
+  }, []);
+  async function checkDownloads() {
+    setLoading('loading');
+    let downloads = [];
+    let count = 0;
+
+    if (downloadData.length === 0) {
+      setLoading('done');
+      return;
+    }
+    downloadData.forEach(async (item) => {
+      var url = item.url;
+      var ext = url.split('.').pop();
+      const {fs} = RNFetchBlob;
+      let VideoDir = fs.dirs.SDCardDir;
+      let hasPermission = await requestStoragePermission();
+
+      if (!hasPermission) {
+        requestStoragePermission();
+        return false;
+      }
+
+      RNFetchBlob.fs
+        .exists(VideoDir + '/POC/' + item.id + '.' + ext)
+        .then((exists) => {
+          if (exists) {
+            downloads.push(item);
+          }
+          count += 1;
+          if (count === downloadData.length) {
+            dispatch(setDownloadsData(downloads));
+            setLoading('done');
+          }
+        })
+        .catch((err) => {
+          console.log(err, 'checking error');
+          setLoading('error');
+        });
+    });
+  }
+
   return (
     <>
-      <FlatList
-        keyExtractor={(item, index) => index.toString()}
-        data={data}
-        ListEmptyComponent={() => <EmptyContainer />}
-        renderItem={(props) => <Item {...props} />}
-      />
+      {isLoading === 'done' && (
+        <FlatList
+          keyExtractor={(item, index) => index.toString()}
+          data={downloadData}
+          ListEmptyComponent={() => <EmptyContainer />}
+          renderItem={(props) => <Item {...props} playVideo={playVideo} />}
+        />
+      )}
+      {isLoading === 'loading' && (
+        <ActivityIndicator
+          color={themeVars.blueIcon}
+          size={32}
+          style={{marginVertical: 20, alignSelf: 'center'}}
+        />
+      )}
     </>
   );
 };
@@ -84,13 +96,14 @@ const EmptyContainer = () => {
     </View>
   );
 };
-const Item = ({item, index}) => (
+const Item = ({item, playVideo, index}) => (
   <ListItem bottomDivider>
     <ListItem.Content>
       <ListItem.Title numberOfLines={1}>{item.name}</ListItem.Title>
       <ListItem.Subtitle>{item.description}</ListItem.Subtitle>
     </ListItem.Content>
     <Button
+      onPress={() => playVideo(item)}
       containerStyle={styles.button}
       buttonStyle={styles.btnIcn}
       icon={{

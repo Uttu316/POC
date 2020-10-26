@@ -3,10 +3,12 @@ import {mainActionTypes} from '../actions/action-types';
 let initialState = {
   token: null,
   isSubscribed: false,
+  notificationData: [],
+  downloadData: [],
+  eventApiStatus: '',
   eventsData: {
     events: [],
     locations: [],
-    eventApiStatus: '',
   },
 };
 export const MainReducer = (state = initialState, action) => {
@@ -35,15 +37,29 @@ export const MainReducer = (state = initialState, action) => {
         eventApiStatus: action.apiStatus,
       };
       break;
+    case mainActionTypes.ADD_NOTIFICATION_DATA:
+      return {
+        ...state,
+        notificationData: action.data,
+      };
+      break;
+    case mainActionTypes.SET_DOWNLOADS_DATA:
+      return {
+        ...state,
+        downloadData: action.data,
+      };
+      break;
     case mainActionTypes.RESET_VALUES:
       return {
         ...state,
         token: null,
         isSubscribed: false,
+        notificationData: [],
+        downloadData: [],
+        eventApiStatus: '',
         eventsData: {
           events: [],
           locations: [],
-          eventApiStatus: '',
         },
       };
       break;

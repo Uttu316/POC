@@ -9,16 +9,25 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import {Avatar, Button, Icon, ListItem} from 'react-native-elements';
-
+import RNFetchBlob from 'rn-fetch-blob';
 import {themeVars} from '../styles/variables';
 import DropDownPicker from 'react-native-dropdown-picker';
 
 import MapView, {Marker} from 'react-native-maps';
 import {PROVIDER_GOOGLE} from 'react-native-maps';
-import {useSelector} from 'react-redux';
+import {useDispatch, useSelector} from 'react-redux';
+import {
+  addNotificationData,
+  getEventsData,
+  setDownloadsData,
+} from '../redux/actions/main-action';
+import moment from 'moment';
+import {showToastWithGravity} from '../apis/api';
+import {playVideo, requestStoragePermission} from '../utils/utils';
 
 const Events = ({fetchEvents, page, setPage}) => {
   const _map = useRef(null);
+  const [checking, toggleChecking] = useState(false);
   const [searchValues, setSeachValues] = useState({
     name: '',
     postcode: '',
@@ -31,19 +40,84 @@ const Events = ({fetchEvents, page, setPage}) => {
       value: 'tennis',
     },
   ]);
+  const dispatch = useDispatch();
   const apiStatus = useSelector((state) => state.main.eventApiStatus);
   const eventsData = useSelector((state) => state.main.eventsData);
+  const notificationData = useSelector((state) => state.main.notificationData);
+  const downloadData = useSelector((state) => state.main.downloadData);
   const data = eventsData.events;
   const locations = eventsData.locations;
+
   useEffect(() => {
     if (_map.current) {
       _map.current.fitToSuppliedMarkers(locations.map(({user_id}) => user_id));
     }
   }, []);
+
   function onSearch() {
-    console.log(page, searchValues.name, types, searchValues.postcode);
     fetchEvents(page, searchValues.name, types, searchValues.postcode);
   }
+
+  async function download(item, index) {
+    let newData = data;
+    newData[index] = {...newData[index], isDownLoading: true};
+    dispatch(getEventsData({...eventsData, events: newData}));
+
+    let hasPermission = await requestStoragePermission();
+
+    if (!hasPermission) {
+      requestStoragePermission();
+      newData[index] = {...newData[index], isDownLoading: false};
+      dispatch(getEventsData({...eventsData, events: newData}));
+      return false;
+    }
+
+    var url = item.url;
+    var ext = url.split('.').pop();
+    const {config, fs} = RNFetchBlob;
+    let VideoDir = fs.dirs.SDCardDir;
+    let options = {
+      fileCache: true,
+      addAndroidDownloads: {
+        useDownloadManager: true,
+        notification: true,
+        path: VideoDir + '/POC/' + item.id + '.' + ext,
+        description: 'Video',
+      },
+    };
+    config(options)
+      .fetch('GET', url)
+      .then((res) => {
+        newData[index] = {
+          ...newData[index],
+          isDownLoading: false,
+          isDownloaded: true,
+        };
+        dispatch(setDownloadsData([...downloadData, newData[index]]));
+        dispatch(getEventsData({...eventsData, events: newData}));
+
+        showToastWithGravity('Video downloaded');
+      })
+      .catch((err) => {
+        newData[index] = {...newData[index], isDownLoading: false};
+        dispatch(getEventsData({...eventsData, events: newData}));
+        showToastWithGravity('Something went wrong!');
+      });
+  }
+
+  function onNotifyMe(item, index) {
+    let newData = data;
+    newData[index] = {...newData[index], isReserved: true};
+    dispatch(getEventsData({...eventsData, events: newData}));
+
+    let newNotificationData = [
+      {...item, status: 'upcoming'},
+      ...notificationData,
+    ];
+
+    dispatch(addNotificationData(newNotificationData));
+  }
+
   return (
     <>
       <View style={styles.mapViewContainer}>
@@ -102,7 +176,14 @@ const Events = ({fetchEvents, page, setPage}) => {
           keyExtractor={(item, index) => index.toString()}
           data={data}
           ListEmptyComponent={() => <EmptyContainer />}
-          renderItem={(props) => <Item {...props} />}
+          renderItem={(props) => (
+            <Item
+              {...props}
+              download={download}
+              playVideo={playVideo}
+              onNotifyMe={onNotifyMe}
+            />
+          )}
         />
       )}
       {apiStatus === 'loading' && (
@@ -137,7 +218,7 @@ const EmptyContainer = () => {
     </View>
   );
 };
-const Item = ({item, index}) => (
+const Item = ({item, onNotifyMe, download, playVideo, index}) => (
   <ListItem bottomDivider>
     <Avatar
       source={{uri: item.image}}
@@ -159,6 +240,13 @@ const Item = ({item, index}) => (
           color: themeVars.blueIcon,
           size: 32,
         }}
+        onPress={() => {
+          if (!item.isDownloaded) {
+            download(item, index);
+          } else {
+            playVideo(item);
+          }
+        }}
       />
     )}
     {item.isDownLoading && (
@@ -168,6 +256,11 @@ const Item = ({item, index}) => (
       <Text style={styles.timeTxt}>at {item.time} </Text>
 
       <TouchableOpacity
+        onPress={() => {
+          if (!item.isReserved) {
+            onNotifyMe(item, index);
+          }
+        }}
         style={[
           styles.rightBtn,
           {
