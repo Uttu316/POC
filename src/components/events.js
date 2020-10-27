@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   TextInput,
   ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import {Avatar, Button, Icon, ListItem} from 'react-native-elements';
 import RNFetchBlob from 'rn-fetch-blob';
@@ -27,7 +28,8 @@ import {playVideo, requestStoragePermission} from '../utils/utils';
 
 const Events = ({fetchEvents, page, setPage}) => {
   const _map = useRef(null);
-  const [checking, toggleChecking] = useState(false);
+  const [refreshing] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [searchValues, setSeachValues] = useState({
     name: '',
     postcode: '',
@@ -55,7 +57,24 @@ const Events = ({fetchEvents, page, setPage}) => {
   }, []);
 
   function onSearch() {
-    fetchEvents(page, searchValues.name, types, searchValues.postcode);
+    setPage(1);
+    fetchEvents(1, searchValues.name, types, searchValues.postcode);
+  }
+  function onLoaMore() {
+    console.log('call');
+    let increasePage = page + 1;
+    setPage(increasePage);
+    setLoadingMore(true);
+
+    fetchEvents(
+      increasePage,
+      searchValues.name,
+      types,
+      searchValues.postcode,
+      (res) => {
+        setLoadingMore(false);
+      },
+    );
   }
 
   async function download(item, index) {
@@ -75,7 +94,7 @@ const Events = ({fetchEvents, page, setPage}) => {
     var url = item.url;
     var ext = url.split('.').pop();
     const {config, fs} = RNFetchBlob;
-    let VideoDir = fs.dirs.SDCardDir;
+    let VideoDir = fs.dirs.DownloadDir;
     let options = {
       fileCache: true,
       addAndroidDownloads: {
@@ -161,6 +180,7 @@ const Events = ({fetchEvents, page, setPage}) => {
           <DropDownPicker
             items={items}
             placeholder="Types"
+            containerStyle={{flex: 1}}
             defaultValue={types}
             onChangeItem={(item) => setTypes(item.value)}
           />
@@ -171,13 +191,34 @@ const Events = ({fetchEvents, page, setPage}) => {
           />
         </View>
       </View>
-      {apiStatus !== 'loading' && (
+      {(loadingMore || apiStatus !== 'loading') && (
         <FlatList
           keyExtractor={(item, index) => index.toString()}
+          removeClippedSubviews={true}
+          initialNumToRender={10}
+          maxToRenderPerBatch={10}
+          windowSize={10}
+          refreshControl={
+            <RefreshControl
+              colors={[themeVars.blueIcon]}
+              tintColor={[themeVars.blueIcon]}
+              refreshing={refreshing}
+              onRefresh={() => {
+                setSeachValues({name: '', postcode: ''});
+                setTypes(null);
+                dispatch(getEventsData({events: [], locations: []}));
+                setPage(1);
+                fetchEvents(1, '', '', '');
+              }}
+            />
+          }
           data={data}
+          onEndReached={() => onLoaMore()}
+          onEndReachedThreshold={0.5}
           ListEmptyComponent={() => <EmptyContainer />}
           renderItem={(props) => (
             <Item
+              key={props.index}
               {...props}
               download={download}
               playVideo={playVideo}
@@ -187,13 +228,19 @@ const Events = ({fetchEvents, page, setPage}) => {
         />
       )}
       {apiStatus === 'loading' && (
-        <ActivityIndicator
-          color={themeVars.blueIcon}
-          size={32}
-          style={{marginVertical: 20, alignSelf: 'center'}}
-        />
+        <Loader marginVertical={loadingMore ? 5 : 20} />
       )}
     </>
+  );
+};
+
+const Loader = ({marginVertical}) => {
+  return (
+    <ActivityIndicator
+      color={themeVars.blueIcon}
+      size={32}
+      style={{marginVertical: marginVertical, alignSelf: 'center'}}
+    />
   );
 };
 const ErrorContainer = () => {

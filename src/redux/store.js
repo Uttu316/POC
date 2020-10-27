@@ -5,15 +5,20 @@ import thunk from 'redux-thunk';
 import {MainReducer} from './reducers/main-reducer';
 
 const persistConfig = {
-  key: 'test-16',
+  key: 'test-21',
   storage: AsyncStorage,
   timeout: 100000,
+  blacklist: ['main'],
 };
-
+const mainConfig = {
+  key: 'main',
+  storage: AsyncStorage,
+  blacklist: ['eventsData'],
+};
 let middleware = [thunk];
 
 const rootReducer = combineReducers({
-  main: MainReducer,
+  main: persistReducer(mainConfig, MainReducer),
 });
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);

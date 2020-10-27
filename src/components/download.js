@@ -36,7 +36,7 @@ const Downloads = () => {
       var url = item.url;
       var ext = url.split('.').pop();
       const {fs} = RNFetchBlob;
-      let VideoDir = fs.dirs.SDCardDir;
+      let VideoDir = fs.dirs.DownloadDir;
       let hasPermission = await requestStoragePermission();
 
       if (!hasPermission) {

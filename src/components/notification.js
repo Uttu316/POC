@@ -55,6 +55,7 @@ const Item = ({item, onAction, index}) => (
     <Avatar
       source={{uri: item.image}}
       icon={{type: 'material', name: 'person', size: 28}}
+      avatarStyle={{borderRadius: 150}}
       placeholderStyle={styles.avatarIcon}
     />
     <ListItem.Content>

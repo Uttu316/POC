@@ -5,7 +5,10 @@ import {useDispatch} from 'react-redux';
 import {resetValues} from '../redux/actions/main-action';
 import {styles} from '../styles/home-styles';
 import {themeVars} from '../styles/variables';
+import RNFetchBlob from 'rn-fetch-blob';
 
+const {fs} = RNFetchBlob;
+var VideoDir = fs.dirs.DownloadDir;
 const BottomTabs = ({currentTab, navigation, setTab}) => {
   const [isLogout, selectLogOut] = useState(false);
   const dispatch = useDispatch();
@@ -16,6 +19,15 @@ const BottomTabs = ({currentTab, navigation, setTab}) => {
       {
         text: 'OK',
         onPress: () => {
+          let path = VideoDir + '/POC';
+          RNFetchBlob.fs
+            .unlink(path)
+            .then((res) => {
+              console.log('deleted');
+            })
+            .catch((err) => {
+              console.log(err);
+            });
           navigation.replace('login');
           dispatch(resetValues());
         },
