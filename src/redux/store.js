@@ -5,7 +5,7 @@ import thunk from 'redux-thunk';
 import {MainReducer} from './reducers/main-reducer';
 
 const persistConfig = {
-  key: 'test-21',
+  key: 'test-re',
   storage: AsyncStorage,
   timeout: 100000,
   blacklist: ['main'],
