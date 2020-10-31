@@ -6,6 +6,7 @@ import {resetValues} from '../redux/actions/main-action';
 import {styles} from '../styles/home-styles';
 import {themeVars} from '../styles/variables';
 import RNFetchBlob from 'rn-fetch-blob';
+import PushNotification from 'react-native-push-notification';
 
 const {fs} = RNFetchBlob;
 var VideoDir = fs.dirs.DownloadDir;
@@ -30,6 +31,7 @@ const BottomTabs = ({currentTab, navigation, setTab}) => {
             });
           navigation.replace('login');
           dispatch(resetValues());
+          PushNotification.cancelAllLocalNotifications();
         },
       },
       {
