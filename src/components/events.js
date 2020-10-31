@@ -24,7 +24,11 @@ import {
 } from '../redux/actions/main-action';
 import moment from 'moment';
 import {showToastWithGravity} from '../apis/api';
-import {playVideo, requestStoragePermission} from '../utils/utils';
+import {
+  playVideo,
+  testPushNotification,
+  requestStoragePermission,
+} from '../utils/utils';
 
 const Events = ({fetchEvents, page, setPage}) => {
   const _map = useRef(null);
@@ -57,11 +61,11 @@ const Events = ({fetchEvents, page, setPage}) => {
   }, []);
 
   function onSearch() {
+    dispatch(getEventsData({locations: [], events: []}));
     setPage(1);
     fetchEvents(1, searchValues.name, types, searchValues.postcode);
   }
   function onLoaMore() {
-    console.log('call');
     let increasePage = page + 1;
     setPage(increasePage);
     setLoadingMore(true);
@@ -128,6 +132,15 @@ const Events = ({fetchEvents, page, setPage}) => {
     let newData = data;
     newData[index] = {...newData[index], isReserved: true};
     dispatch(getEventsData({...eventsData, events: newData}));
+    let eventDate = moment(item.time);
+    let fiveMinuteEarlier = moment().add(5, 'seconds').toDate();
+
+    testPushNotification(
+      item.name,
+      'This event will starts in 5 minutes!',
+      fiveMinuteEarlier,
+      item.id,
+    );
 
     let newNotificationData = [
       {...item, status: 'upcoming'},
@@ -157,79 +170,85 @@ const Events = ({fetchEvents, page, setPage}) => {
           ))}
         </MapView>
       </View>
-      <View style={styles.formContainer}>
-        <View style={styles.formLeftContaner}>
-          <TextInput
-            placeholder="Name"
-            value={searchValues.name}
-            onChangeText={(text) =>
-              setSeachValues({...searchValues, name: text})
-            }
-            style={[styles.input, {marginBottom: 5}]}
+
+      <FlatList
+        keyExtractor={(item, index) => index.toString()}
+        removeClippedSubviews={true}
+        initialNumToRender={10}
+        maxToRenderPerBatch={10}
+        windowSize={10}
+        ListHeaderComponent={() => (
+          <View style={styles.formContainer}>
+            <View style={styles.formLeftContaner}>
+              <TextInput
+                placeholder="Name"
+                value={searchValues.name}
+                onChangeText={(text) =>
+                  setSeachValues({...searchValues, name: text})
+                }
+                style={[styles.input, {marginBottom: 5}]}
+              />
+              <TextInput
+                value={searchValues.postcode}
+                onChangeText={(text) =>
+                  setSeachValues({...searchValues, postcode: text})
+                }
+                placeholder="Postcode"
+                style={styles.input}
+              />
+            </View>
+            <View style={styles.formRightContanier}>
+              <DropDownPicker
+                items={items}
+                placeholder="Types"
+                containerStyle={{flex: 1}}
+                defaultValue={types}
+                onChangeItem={(item) => setTypes(item.value)}
+              />
+              <Button
+                title="Search"
+                containerStyle={{marginTop: 5}}
+                onPress={() => onSearch()}
+              />
+            </View>
+          </View>
+        )}
+        refreshControl={
+          <RefreshControl
+            colors={[themeVars.blueIcon]}
+            tintColor={[themeVars.blueIcon]}
+            refreshing={refreshing}
+            onRefresh={() => {
+              setSeachValues({name: '', postcode: ''});
+              setTypes(null);
+              dispatch(getEventsData({events: [], locations: []}));
+              setPage(1);
+              fetchEvents(1, '', '', '');
+            }}
           />
-          <TextInput
-            value={searchValues.postcode}
-            onChangeText={(text) =>
-              setSeachValues({...searchValues, postcode: text})
-            }
-            placeholder="Postcode"
-            style={styles.input}
+        }
+        data={data}
+        onEndReached={() => onLoaMore()}
+        onEndReachedThreshold={0.5}
+        ListEmptyComponent={() =>
+          apiStatus !== 'loading' ? (
+            <EmptyContainer />
+          ) : (
+            <Loader marginVertical={loadingMore ? 5 : 20} />
+          )
+        }
+        renderItem={(props) => (
+          <Item
+            key={props.index}
+            {...props}
+            download={download}
+            playVideo={playVideo}
+            onNotifyMe={onNotifyMe}
           />
-        </View>
-        <View style={styles.formRightContanier}>
-          <DropDownPicker
-            items={items}
-            placeholder="Types"
-            containerStyle={{flex: 1}}
-            defaultValue={types}
-            onChangeItem={(item) => setTypes(item.value)}
-          />
-          <Button
-            title="Search"
-            containerStyle={{marginTop: 5}}
-            onPress={() => onSearch()}
-          />
-        </View>
-      </View>
-      {(loadingMore || apiStatus !== 'loading') && (
-        <FlatList
-          keyExtractor={(item, index) => index.toString()}
-          removeClippedSubviews={true}
-          initialNumToRender={10}
-          maxToRenderPerBatch={10}
-          windowSize={10}
-          refreshControl={
-            <RefreshControl
-              colors={[themeVars.blueIcon]}
-              tintColor={[themeVars.blueIcon]}
-              refreshing={refreshing}
-              onRefresh={() => {
-                setSeachValues({name: '', postcode: ''});
-                setTypes(null);
-                dispatch(getEventsData({events: [], locations: []}));
-                setPage(1);
-                fetchEvents(1, '', '', '');
-              }}
-            />
-          }
-          data={data}
-          onEndReached={() => onLoaMore()}
-          onEndReachedThreshold={0.5}
-          ListEmptyComponent={() => <EmptyContainer />}
-          renderItem={(props) => (
-            <Item
-              key={props.index}
-              {...props}
-              download={download}
-              playVideo={playVideo}
-              onNotifyMe={onNotifyMe}
-            />
-          )}
-        />
-      )}
-      {apiStatus === 'loading' && (
-        <Loader marginVertical={loadingMore ? 5 : 20} />
-      )}
+        )}
+      />
+
+      {loadingMore && <Loader marginVertical={loadingMore ? 5 : 20} />}
     </>
   );
 };
@@ -300,7 +319,12 @@ const Item = ({item, onNotifyMe, download, playVideo, index}) => (
       <ActivityIndicator color={themeVars.blueIcon} size={32} />
     )}
     <View style={styles.listRightContainer}>
-      <Text style={styles.timeTxt}>at {item.time} </Text>
+      <Text style={styles.timeTxt}>
+        at{' '}
+        {moment(item.time).format('MMM Do YY') +
+          '\n' +
+          moment(item.time).format('h:mm:ss a')}
+      </Text>
 
       <TouchableOpacity
         onPress={() => {
@@ -381,7 +405,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 0,
   },
   mapViewContainer: {
-    height: 250,
+    height: 200,
+    marginBottom: 10,
   },
   map: {
     flex: 1,

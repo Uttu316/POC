@@ -2,14 +2,20 @@ import React, {useState} from 'react';
 import {View, Text, StyleSheet, FlatList, TouchableOpacity} from 'react-native';
 import {Avatar, Button, Icon, ListItem} from 'react-native-elements';
 import {useSelector, useDispatch} from 'react-redux';
-import {addNotificationData} from '../redux/actions/main-action';
+import {
+  addNotificationData,
+  addVisibleNotificationData,
+} from '../redux/actions/main-action';
 import {themeVars} from '../styles/variables';
+import moment from 'moment';
 
 const Notification = () => {
   const dispatch = useDispatch();
   const [isChanging, toggle] = useState(false);
   let data = useSelector((state) => state.main.notificationData);
-
+  let visibleNotifications = useSelector(
+    (state) => state.main.visibleNotifications,
+  );
   const totalCount = data.length;
 
   function onAction(item, index) {
@@ -20,7 +26,9 @@ const Notification = () => {
     };
     toggle(!isChanging);
     dispatch(addNotificationData(newNotificationData));
+    dispatch(addVisibleNotificationData(null));
   }
+
   return (
     <>
       {data && data.length > 0 && (
@@ -32,7 +40,13 @@ const Notification = () => {
         keyExtractor={(item, index) => index.toString()}
         data={data}
         ListEmptyComponent={() => <EmptyContainer />}
-        renderItem={(props) => <Item {...props} onAction={onAction} />}
+        renderItem={(props) => (
+          <Item
+            {...props}
+            onAction={onAction}
+            visibleNotifications={visibleNotifications}
+          />
+        )}
       />
     </>
   );
@@ -50,8 +64,13 @@ const EmptyContainer = () => {
     </View>
   );
 };
-const Item = ({item, onAction, index}) => (
-  <ListItem bottomDivider>
+const Item = ({item, onAction, visibleNotifications, index}) => (
+  <ListItem
+    bottomDivider
+    containerStyle={{
+      backgroundColor:
+        visibleNotifications === item.id ? 'rgba(0,255,0,0.3)' : 'white',
+    }}>
     <Avatar
       source={{uri: item.image}}
       icon={{type: 'material', name: 'person', size: 28}}
@@ -63,7 +82,7 @@ const Item = ({item, onAction, index}) => (
       <ListItem.Subtitle>{item.description}</ListItem.Subtitle>
     </ListItem.Content>
     <View style={styles.listRightContainer}>
-      <Text style={styles.timeTxt}>starts in {item.time} </Text>
+      <Text style={styles.timeTxt}>starts {moment(item.time).fromNow()} </Text>
       <TouchableOpacity
         onPress={() => {
           if (item.status === 'upcoming') {

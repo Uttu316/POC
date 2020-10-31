@@ -4,8 +4,11 @@ let initialState = {
   token: null,
   isSubscribed: false,
   notificationData: [],
+  visibleNotifications: null,
   downloadData: [],
   eventApiStatus: '',
+  currentTab: 'home',
+
   eventsData: {
     events: [],
     locations: [],
@@ -43,10 +46,22 @@ export const MainReducer = (state = initialState, action) => {
         notificationData: action.data,
       };
       break;
+    case mainActionTypes.ADD_VISIBLE_NOTIFICATION:
+      return {
+        ...state,
+        visibleNotifications: action.data,
+      };
+      break;
     case mainActionTypes.SET_DOWNLOADS_DATA:
       return {
         ...state,
         downloadData: action.data,
+      };
+      break;
+    case mainActionTypes.CHANGE_CURRENT_TAB:
+      return {
+        ...state,
+        currentTab: action.tab,
       };
       break;
     case mainActionTypes.RESET_VALUES:

@@ -1,16 +1,18 @@
 import React from 'react';
 import {View, Text, StatusBar, SafeAreaView, ScrollView} from 'react-native';
 import {Button, Image, Icon} from 'react-native-elements';
-import {useSelector} from 'react-redux';
+import {useDispatch, useSelector} from 'react-redux';
+import {changeCurrentTab} from '../../redux/actions/main-action';
 import {styles} from '../../styles/splash-styles';
 import {themeVars} from '../../styles/variables';
 
 const SplashScreen = ({navigation}) => {
   const token = useSelector((state) => state.main.token);
-
+  const dispatch = useDispatch();
   function onLetStarted() {
     if (token) {
       navigation.navigate('home');
+      dispatch(changeCurrentTab('home'));
     } else {
       navigation.navigate('login');
     }

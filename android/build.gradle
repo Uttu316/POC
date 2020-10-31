@@ -2,12 +2,16 @@
 
 buildscript {
     ext {
+        googlePlayServicesVersion = "+"
+        firebaseMessagingVersion = "+" 
         buildToolsVersion = "29.0.2"
         minSdkVersion = 16
         compileSdkVersion = 29
         targetSdkVersion = 29
         playServicesVersion = "17.0.0"
         androidMapsUtilsVersion = "2.0.3"
+        supportLibVersion = "23.1.1"
+      
     }
     repositories {
         google()

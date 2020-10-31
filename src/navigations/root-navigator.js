@@ -6,6 +6,7 @@ import {useSelector} from 'react-redux';
 import SplashScreen from './screens/splash-screen';
 import LoginScreen from './screens/login-screen';
 import HomeScreen from './screens/home-screen';
+import {ConfigPush} from '../utils/notificationHandler';
 
 const Stack = createStackNavigator();
 
@@ -14,6 +15,7 @@ const RootNavigator = (props) => {
 
   return (
     <NavigationContainer>
+      <ConfigPush />
       <Stack.Navigator>
         <Stack.Screen
           name="splash"
@@ -31,7 +33,6 @@ const RootNavigator = (props) => {
             headerShown: false,
           }}
         />
-
         <Stack.Screen
           name="home"
           component={HomeScreen}

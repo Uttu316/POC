@@ -34,13 +34,24 @@ export const addNotificationData = (data) => {
     data,
   };
 };
+export const addVisibleNotificationData = (data) => {
+  return {
+    type: mainActionTypes.ADD_VISIBLE_NOTIFICATION,
+    data,
+  };
+};
 export const setDownloadsData = (data) => {
   return {
     type: mainActionTypes.SET_DOWNLOADS_DATA,
     data,
   };
 };
-
+export const changeCurrentTab = (tab) => {
+  return {
+    type: mainActionTypes.CHANGE_CURRENT_TAB,
+    tab,
+  };
+};
 export const resetValues = () => {
   return {
     type: mainActionTypes.RESET_VALUES,

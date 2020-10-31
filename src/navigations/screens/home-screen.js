@@ -10,14 +10,16 @@ import Home from '../../components/home';
 import Notification from '../../components/notification';
 import TopTabs from '../../components/top-tabs';
 import {
+  changeCurrentTab,
   getEventsData,
   setEventAPIStatus,
+  testPushNotification,
 } from '../../redux/actions/main-action';
 import {styles} from '../../styles/home-styles';
 import {check} from '../../utils/utils';
 
 const HomeScreen = ({navigation}) => {
-  const [currentTab, setTab] = useState('home');
+  const currentTab = useSelector((state) => state.main.currentTab);
   const eventsData = useSelector((state) => state.main.eventsData);
   const {events, locations} = eventsData;
   const downloadData = useSelector((state) => state.main.downloadData);
@@ -48,12 +50,12 @@ const HomeScreen = ({navigation}) => {
             id: item.Id,
             image: item.Thumb,
             url: item.FileUri,
-            isDownloaded: check(item, notificationData),
+            isDownloaded: check(item, downloadData),
             isDownLoading: false,
             name: item.Title,
             description: item.Description,
             time: item.EventStartTime,
-            isReserved: check(item, downloadData),
+            isReserved: check(item, notificationData),
           });
         });
 
@@ -61,7 +63,7 @@ const HomeScreen = ({navigation}) => {
           events: newEvents,
           locations: newLocations,
         };
-        console.log(apiData, pageNo);
+
         dispatch(getEventsData(apiData));
 
         if (callback) {
@@ -84,6 +86,9 @@ const HomeScreen = ({navigation}) => {
         dispatch(setEventAPIStatus('error'));
         showToastWithGravity('Unable to fetch events');
       });
+  }
+  function setTab(selectedTab) {
+    dispatch(changeCurrentTab(selectedTab));
   }
 
   return (
