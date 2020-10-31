@@ -12,7 +12,7 @@ const Home = () => {
   const isSubscribed = useSelector((state) => state.main.isSubscribed);
   const dispatch = useDispatch();
   function onBuySubscription() {
-    testPushNotification();
+    //testPushNotification();
     dispatch(getSubscription(!isSubscribed));
   }
   return (
