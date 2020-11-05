@@ -1,18 +1,113 @@
-import React from 'react';
-import {View, Text, StyleSheet} from 'react-native';
+import React, {useState, useEffect} from 'react';
+import {View, Text, Platform, StyleSheet} from 'react-native';
 import {Avatar, Button} from 'react-native-elements';
 import {useDispatch, useSelector} from 'react-redux';
-import {
-  getSubscription,
-  testPushNotification,
-} from '../redux/actions/main-action';
+import {getSubscription} from '../redux/actions/main-action';
 import {themeVars} from '../styles/variables';
+import RNIap, {
+  InAppPurchase,
+  PurchaseError,
+  SubscriptionPurchase,
+  acknowledgePurchaseAndroid,
+  consumePurchaseAndroid,
+  finishTransaction,
+  finishTransactionIOS,
+  purchaseErrorListener,
+  purchaseUpdatedListener,
+} from 'react-native-iap';
+
+const itemSkus = Platform.select({
+  ios: [
+    'com.cooni.point1000',
+    'com.cooni.point5000', // dooboolab
+  ],
+  android: [
+    'android.test.purchased',
+    'android.test.canceled',
+    'android.test.refunded',
+    'android.test.item_unavailable',
+  ],
+});
+const itemSubs = Platform.select({
+  ios: [
+    'com.cooni.point1000',
+    'com.cooni.point5000', // dooboolab
+  ],
+  android: [
+    'test.sub1', // subscription
+  ],
+});
+var purchaseUpdateSubscription = null;
+var purchaseErrorSubscription = null;
 
 const Home = () => {
   const isSubscribed = useSelector((state) => state.main.isSubscribed);
+  const [products, setProducts] = useState(null);
+
   const dispatch = useDispatch();
+
+  useEffect(() => {
+    // try {
+    //   const result = await RNIap.initConnection();
+    //   await RNIap.flushFailedPurchasesCachedAsPendingAndroid();
+    //   console.log('result', result);
+    //   getItems();
+    // } catch (err) {
+    //   console.warn(err.code, err.message);
+    // }
+    getItems();
+    purchaseUpdateSubscription = purchaseUpdatedListener(async (purchase) => {
+      const receipt = purchase.transactionReceipt;
+      if (receipt) {
+        try {
+          if (Platform.OS === 'ios') {
+            finishTransactionIOS(purchase.transactionId);
+          }
+          await finishTransaction(purchase);
+        } catch (ackErr) {
+          console.log('ackErr', ackErr);
+        }
+      }
+    });
+    purchaseErrorSubscription = purchaseErrorListener((error) => {
+      console.log('purchaseErrorListener', error);
+    });
+    return () => {
+      if (purchaseUpdateSubscription) {
+        purchaseUpdateSubscription.remove();
+        purchaseUpdateSubscription = null;
+      }
+      if (purchaseErrorSubscription) {
+        purchaseErrorSubscription.remove();
+        purchaseErrorSubscription = null;
+      }
+    };
+  }, []);
+  const getItems = async () => {
+    try {
+      const newproducts = await RNIap.getProducts(itemSkus);
+
+      setProducts(newproducts);
+    } catch (err) {
+      console.log(err.code, err.message);
+    }
+  };
+  const requestPurchase = async (sku) => {
+    try {
+      RNIap.requestPurchase(sku);
+    } catch (err) {
+      console.log(err.code, err.message);
+    }
+  };
+
   function onBuySubscription() {
-    //testPushNotification();
+    if (products !== null) {
+      try {
+        requestPurchase(products[0].productId);
+      } catch (err) {
+        console.log(err);
+      }
+    }
     dispatch(getSubscription(!isSubscribed));
   }
   return (
@@ -37,6 +132,7 @@ const Home = () => {
       <Text style={styles.contentPrice}>$10/month</Text>
       <Button
         raised
+        disabled={isSubscribed}
         title={!isSubscribed ? 'Buy Subscription' : "You've Subscribed"}
         containerStyle={styles.button}
         buttonStyle={styles.btn}
